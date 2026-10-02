@@ -207,23 +207,29 @@ function getActiveParent(T) {
 // ══════════════════════════════════════════════════════
 //  DONUT LOGIC
 // ══════════════════════════════════════════════════════
+function timeToPercent(secRemaining) {
+  const minRem = secRemaining / 60;
+  if (minRem >= 20) {
+    return ((60 - minRem) / 40) * 0.20;
+  } else if (minRem >= 10) {
+    return 0.20 + ((20 - minRem) / 10) * 0.30;
+  } else {
+    return 0.50 + ((10 - minRem) / 10) * 0.50;
+  }
+}
+
 function buildDonut() {
   const group = E.stageArcs;
   group.innerHTML = '';
   const parents = STAGES.filter(s => s.type === 'P');
-  let currentOffset = 0;
   
   parents.forEach(stage => {
-    let len;
-    if (stage.id === '1') {
-      len = 0.20 * C; // 20% of the donut
-    } else {
-      // Remaining 1200 seconds take 80% of the donut
-      len = (stage.donutDur / 1200) * (0.80 * C);
-    }
+    const startP = timeToPercent(stage.startSec);
+    const endP = timeToPercent(Math.max(0, stage.startSec - stage.donutDur));
+    const len = (endP - startP) * C;
     
     stage.arcLen = len;
-    stage.arcOffset = currentOffset;
+    stage.arcOffset = startP * C;
     
     if (len <= 0) return;
     const vis = Math.max(0, len - ARC_GAP);
@@ -235,13 +241,11 @@ function buildDonut() {
     c.setAttribute('stroke', stage.color);
     c.setAttribute('stroke-width', DSW);
     c.setAttribute('stroke-dasharray', `${vis} ${C - vis}`);
-    c.setAttribute('stroke-dashoffset', -currentOffset);
+    c.setAttribute('stroke-dashoffset', -(startP * C));
     c.setAttribute('transform', `rotate(-90 ${CX} ${CY})`);
     c.setAttribute('class', 'stage-arc');
     c.setAttribute('id', `arc-${stage.id.replace('.','-')}`);
     group.appendChild(c);
-    
-    currentOffset += len;
   });
   
   buildTicks();
@@ -279,16 +283,7 @@ function buildTicks() {
     const minRemaining = 60 - min;
     const isMajor = textRemainingSet.has(minRemaining);
     
-    // Map time to nonlinear circle percentage
-    let percent;
-    if (min <= 40) {
-      // First 40 minutes map to 0% to 20% of the circle
-      percent = (min / 40) * 0.20;
-    } else {
-      // Remaining 20 minutes map to 20% to 100% of the circle
-      percent = 0.20 + ((min - 40) / 20) * 0.80;
-    }
-    
+    const percent = timeToPercent(minRemaining * 60);
     const angle = (percent * 360 - 90) * (Math.PI / 180);
     
     const r1 = rOuter + 3;
@@ -320,7 +315,7 @@ function buildTicks() {
         lbl = `${m}:${String(s).padStart(2,'0')}`;
       }
       
-      txt.setAttribute('font-size', '24');
+      txt.setAttribute('font-size', '16');
       txt.setAttribute('font-family', 'monospace');
       txt.textContent = lbl;
       g.appendChild(txt);
@@ -357,33 +352,26 @@ function updateConsumedArc(T) {
     return;
   }
   
-  const parentRem = T - (activeParent.startSec - activeParent.donutDur);
-  const elapsed = 1 - (parentRem / activeParent.donutDur);
-  const len = Math.max(0, elapsed * activeParent.arcLen);
+  const startP = timeToPercent(activeParent.startSec);
+  const currentP = timeToPercent(T);
+  const len = Math.max(0, (currentP - startP) * C);
   
   E.arcConsumed.setAttribute('stroke-dasharray', `${len} ${C - len}`);
-  E.arcConsumed.setAttribute('stroke-dashoffset', -activeParent.arcOffset);
+  E.arcConsumed.setAttribute('stroke-dashoffset', -(startP * C));
 }
 
 function updateDonutCenter(T) {
-  const activeParent = getActiveParent(T);
   E.dcTotalTime.textContent = fmt(T);
   
-  if (!activeParent || !activeParent.donutDur) {
-    E.dcStageName.textContent = '—';
-    E.dcStageTime.textContent = '—';
-    E.dcStageTime.style.color = '';
-    return;
-  }
+  // The user requested to ONLY show the total timer inside the donut,
+  // so we clear out the stage name and stage time completely.
+  E.dcStageName.textContent = '';
+  E.dcStageTime.textContent = '';
+  E.dcStageTime.style.color = '';
   
-  const short = activeParent.description.length > 24 ? activeParent.description.slice(0, 24) + '…' : activeParent.description;
-  E.dcStageName.textContent = short;
-  
-  const parentRem = T - (activeParent.startSec - activeParent.donutDur);
-  E.dcStageTime.textContent = fmt(parentRem);
-  
-  const ratio = parentRem / activeParent.donutDur;
-  E.dcStageTime.style.color = ratio < 0.15 ? '#ff4444' : ratio < 0.25 ? '#ff9900' : '';
+  // Hide the "in stage" label if we can
+  const lbl = document.querySelector('.dc-stage-label');
+  if (lbl) lbl.style.display = 'none';
 }
 
 // ══════════════════════════════════════════════════════
