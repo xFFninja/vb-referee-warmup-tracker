@@ -67,6 +67,13 @@ app.post('/api/sessions/:name', (req, res) => {
 
 // Admin endpoint to format connections as requested
 app.get('/api/admin/connections', (req, res) => {
+  const token = req.query.token || req.headers['x-admin-token'];
+  const expectedToken = process.env.ADMIN_TOKEN || 'admin-secret';
+  
+  if (token !== expectedToken) {
+    return res.status(401).send('Unauthorized');
+  }
+
   const now = Date.now();
   // Cleanup connections not seen in the last 10 seconds (since client polls every 1.5s)
   for (const user in activeConnections) {

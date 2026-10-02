@@ -13,5 +13,6 @@ services:
       - "6789:80" # Access at http://localhost:6789
     environment:
       - ALLOWED_USERS=warmup
+      - ADMIN_TOKEN=admin-secret
     restart: unless-stopped
     volumes: [] # Static files baked into image; no volumes needed
