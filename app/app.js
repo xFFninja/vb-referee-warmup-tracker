@@ -623,28 +623,26 @@ async function initSession() {
     stepAuth.style.display = 'none';
     stepChoose.style.display = 'block';
     
-    // Fetch active sessions from server
+    // Fetch the user's own active session from server
     try {
-      const res = await fetch('/api/sessions');
+      const res = await fetch(`/api/sessions/${validatedName}`);
       if (res.ok) {
-        const activeNames = await res.json();
-        if (activeNames.length > 0) {
-          listCont.innerHTML = '<p style="font-size:13px; color:var(--text-sec); margin-bottom:8px;">Активні сесії:</p>';
-          activeNames.forEach(sName => {
-            const b = document.createElement('button');
-            b.className = 'btn btn-ghost';
-            b.style.width = '100%';
-            b.style.justifyContent = 'center';
-            b.textContent = `Приєднатися до '${sName}'`;
-            b.onclick = () => {
-              sessionStorage.setItem('activeSessionName', sName);
-              modal.style.display = 'none';
-              loadSession(sName, false);
-            };
-            listCont.appendChild(b);
-          });
+        const state = await res.json();
+        if (state) {
+          listCont.innerHTML = '<p style="font-size:13px; color:var(--text-sec); margin-bottom:8px;">Ваша активна сесія:</p>';
+          const b = document.createElement('button');
+          b.className = 'btn btn-ghost';
+          b.style.width = '100%';
+          b.style.justifyContent = 'center';
+          b.textContent = `Приєднатися до '${validatedName}'`;
+          b.onclick = () => {
+            sessionStorage.setItem('activeSessionName', validatedName);
+            modal.style.display = 'none';
+            loadSession(validatedName, false);
+          };
+          listCont.appendChild(b);
         } else {
-          listCont.innerHTML = '<p style="font-size:13px; color:var(--text-muted);">Немає активних сесій.</p>';
+          listCont.innerHTML = '<p style="font-size:13px; color:var(--text-muted);">Немає активних сесій для вашого користувача.</p>';
         }
       }
     } catch(e) {

@@ -49,11 +49,6 @@ function trackConnection(req, username) {
   }
 }
 
-app.get('/api/sessions', (req, res) => {
-  // Return list of session names
-  res.json(Object.keys(sessions));
-});
-
 app.get('/api/sessions/:name', (req, res) => {
   trackConnection(req, req.params.name);
   res.json(sessions[req.params.name] || null);
