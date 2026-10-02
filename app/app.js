@@ -252,8 +252,32 @@ function buildTicks() {
   const g = E.tickMarks;
   g.innerHTML = '';
   const rOuter = DR + DSW / 2;
+  
+  // Base ticks every 5 minutes
+  const tickElapsedSet = new Set();
   for (let min = 0; min <= 55; min += 5) {
-    const isMajor = (min % 15 === 0);
+    tickElapsedSet.add(min);
+  }
+  
+  // Specific requested text labels
+  const textRemainingSet = new Set([45, 30]);
+  
+  // Add ticks and labels for every parent stage
+  const parents = STAGES.filter(s => s.type === 'P');
+  parents.forEach(p => {
+    const rem = p.startSec / 60;
+    const minElapsed = 60 - rem;
+    tickElapsedSet.add(minElapsed);
+    
+    // Skip labeling '0' to avoid overlap with '60' at the top
+    if (rem > 0) {
+      textRemainingSet.add(rem);
+    }
+  });
+
+  tickElapsedSet.forEach(min => {
+    const minRemaining = 60 - min;
+    const isMajor = textRemainingSet.has(minRemaining);
     
     // Map time to nonlinear circle percentage
     let percent;
@@ -277,6 +301,7 @@ function buildTicks() {
     line.setAttribute('stroke', isMajor ? 'var(--text-muted)' : 'var(--border)');
     line.setAttribute('stroke-width', isMajor ? '1.5' : '0.8');
     g.appendChild(line);
+    
     if (isMajor) {
       const lr  = r2 + 11;
       const txt = document.createElementNS(SVGNS, 'text');
@@ -285,12 +310,22 @@ function buildTicks() {
       txt.setAttribute('text-anchor', 'middle');
       txt.setAttribute('dominant-baseline', 'middle');
       txt.setAttribute('fill', 'var(--text-muted)');
-      txt.setAttribute('font-size', '9');
+      
+      let lbl = '';
+      if (minRemaining % 1 === 0) {
+        lbl = String(minRemaining);
+      } else {
+        const m = Math.floor(minRemaining);
+        const s = Math.round((minRemaining - m) * 60);
+        lbl = `${m}:${String(s).padStart(2,'0')}`;
+      }
+      
+      txt.setAttribute('font-size', '8');
       txt.setAttribute('font-family', 'monospace');
-      txt.textContent = String(60 - min);
+      txt.textContent = lbl;
       g.appendChild(txt);
     }
-  }
+  });
 }
 
 function setArcStates(T) {
