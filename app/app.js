@@ -214,7 +214,14 @@ function buildDonut() {
   let currentOffset = 0;
   
   parents.forEach(stage => {
-    const len = (stage.donutDur / TOTAL_SEC) * C;
+    let len;
+    if (stage.id === '1') {
+      len = 0.20 * C; // 20% of the donut
+    } else {
+      // Remaining 1200 seconds take 80% of the donut
+      len = (stage.donutDur / 1200) * (0.80 * C);
+    }
+    
     stage.arcLen = len;
     stage.arcOffset = currentOffset;
     
@@ -247,7 +254,19 @@ function buildTicks() {
   const rOuter = DR + DSW / 2;
   for (let min = 0; min <= 55; min += 5) {
     const isMajor = (min % 15 === 0);
-    const angle   = ((min / 60) * 360 - 90) * (Math.PI / 180);
+    
+    // Map time to nonlinear circle percentage
+    let percent;
+    if (min <= 40) {
+      // First 40 minutes map to 0% to 20% of the circle
+      percent = (min / 40) * 0.20;
+    } else {
+      // Remaining 20 minutes map to 20% to 100% of the circle
+      percent = 0.20 + ((min - 40) / 20) * 0.80;
+    }
+    
+    const angle = (percent * 360 - 90) * (Math.PI / 180);
+    
     const r1 = rOuter + 3;
     const r2 = r1 + (isMajor ? 8 : 4);
     const line = document.createElementNS(SVGNS, 'line');
