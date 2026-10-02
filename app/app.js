@@ -303,7 +303,7 @@ function buildTicks() {
     g.appendChild(line);
     
     if (isMajor) {
-      const lr  = r2 + 11;
+      const lr  = r2 + 16;
       const txt = document.createElementNS(SVGNS, 'text');
       txt.setAttribute('x', (CX + Math.cos(angle) * lr).toFixed(2));
       txt.setAttribute('y', (CY + Math.sin(angle) * lr).toFixed(2));
@@ -320,7 +320,7 @@ function buildTicks() {
         lbl = `${m}:${String(s).padStart(2,'0')}`;
       }
       
-      txt.setAttribute('font-size', '8');
+      txt.setAttribute('font-size', '24');
       txt.setAttribute('font-family', 'monospace');
       txt.textContent = lbl;
       g.appendChild(txt);
