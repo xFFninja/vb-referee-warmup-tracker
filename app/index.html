@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="uk" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Протокол передматчевої розминки</title>
+  <meta name="description"
+    content="Офіційний таймер протоколу передматчевої розминки волейболу. Відстеження етапів для суддів та команд.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header class="app-header" id="app-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <img src="img/ball-ava.jpg" alt="Logo" class="brand-icon">
+        <div class="brand-text">
+          <h1 class="brand-title">Протокол передматчевої розминки</h1>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="btn btn-ghost btn-icon-only" id="btn-theme" aria-label="Змінити тему"
+          title="Світла / Темна тема">
+          <span class="btn-icon" id="theme-icon">☀️</span>
+        </button>
+        <div class="status-pill" id="status-pill">
+          <span class="status-dot" id="status-dot"></span>
+          <span class="status-text" id="status-text">Очікування</span>
+        </div>
+        <button class="btn btn-primary" id="btn-play" aria-label="Старт / Пауза">
+          <span class="btn-icon" id="btn-play-icon">&#9654;</span>
+          <span class="btn-label" id="btn-play-label">Старт</span>
+        </button>
+        <button class="btn btn-ghost" id="btn-reset" aria-label="Скинути таймер">
+          <span class="btn-icon">&#8635;</span>
+          <span class="btn-label">Скинути</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="app-main" id="app-main">
+
+    <!-- TOP: Donut + Details side by side (35% height) -->
+    <div class="top-section">
+
+      <!-- LEFT: Donut Timer Panel -->
+      <section class="panel donut-panel" id="donut-panel" aria-label="Загальний таймер">
+        <div class="donut-wrapper" id="donut-wrapper">
+          <svg class="donut-svg" id="donut-svg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true">
+            <defs>
+              <radialGradient id="innerBg" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="var(--bg-surface)" />
+                <stop offset="100%" stop-color="var(--bg-base)" />
+              </radialGradient>
+              <filter id="arcGlow" x="-60%" y="-60%" width="220%" height="220%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            <!-- Background track ring -->
+            <circle cx="200" cy="200" r="150" fill="none" stroke="var(--track-color)" stroke-width="42" />
+            <!-- Stage arc segments rendered by JS -->
+            <g id="stage-arcs"></g>
+            <!-- Consumed overlay: darkens elapsed portion of current stage -->
+            <circle id="arc-consumed" cx="200" cy="200" r="150" fill="none" stroke="var(--consumed-color)"
+              stroke-width="44" stroke-dasharray="0 943" stroke-dashoffset="0" transform="rotate(-90 200 200)" />
+            <!-- Tick marks rendered by JS -->
+            <g id="tick-marks"></g>
+            <!-- Inner mask creates the donut hole -->
+            <circle cx="200" cy="200" r="127" fill="url(#innerBg)" />
+          </svg>
+
+          <!-- Centered HTML overlay for timer text -->
+          <div class="donut-center" id="donut-center">
+            <div class="dc-stage-name" id="dc-stage-name">Підготовка</div>
+            <div class="dc-total-time" id="dc-total-time">60:00</div>
+            <div class="dc-stage-row">
+              <span class="dc-stage-time" id="dc-stage-time">15:00</span>
+              <span class="dc-stage-label">в&nbsp;етапі</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: Stage Details Panel -->
+      <section class="panel details-panel" id="details-panel" aria-label="Поточний етап">
+        <div class="details-head" id="details-head">
+          <div class="details-badge" id="details-badge">01</div>
+          <div class="details-info">
+            <div class="details-label">Поточний&nbsp;етап</div>
+            <div class="details-title" id="details-title">Перевірка обладнання</div>
+          </div>
+          <div class="details-countdown">
+            <div class="details-countdown-val" id="details-countdown-val">15:00</div>
+            <div class="details-countdown-lbl">залишилось</div>
+          </div>
+        </div>
+        <!-- Stage progress bar -->
+        <div class="prog-track" aria-hidden="true">
+          <div class="prog-fill" id="prog-fill"></div>
+        </div>
+        <!-- Referee & Team actions body -->
+        <div class="details-body" id="details-body">
+          <div class="actions-grid">
+            <div class="action-col" id="col-ref">
+              <div class="ref-heading"><span aria-hidden="true">&#x1F9D1;&#x200D;&#x2696;&#xFE0F;</span>&nbsp;Дії суддів
+              </div>
+              <div class="ref-content" id="ref-content">Натисніть Старт для початку відліку.</div>
+            </div>
+            <div class="action-col" id="col-team">
+              <div class="team-heading"><span aria-hidden="true">&#x1F465;</span>&nbsp;Дії команд</div>
+              <div class="team-content" id="team-content">Очікування команд...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /top-section -->
+
+    <!-- BOTTOM: Remaining Stage List (65% height) -->
+    <section class="panel list-panel" id="list-panel" aria-label="Список етапів">
+      <div class="list-head">
+        <div class="list-head-title">
+          <span aria-hidden="true">&#x1F4CB;</span>&nbsp;Розклад&nbsp;етапів
+        </div>
+        <span class="list-count-badge" id="list-count-badge">14 етапів</span>
+      </div>
+      <div class="list-scroll" id="list-scroll">
+        <div class="stage-list" id="stage-list"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Match-start overlay -->
+  <div class="match-overlay" id="match-overlay" aria-hidden="true">
+    <div class="mo-box">
+      <img src="img/ball-ava.jpg" alt="Logo" class="mo-icon">
+      <div class="mo-title">МАТЧ&nbsp;РОЗПОЧАТО!</div>
+      <div class="mo-sub">Перша подача</div>
+      <button class="btn btn-primary" id="btn-dismiss">Закрити</button>
+    </div>
+  </div>
+
+  <!-- Session Prompt Modal -->
+  <div class="session-modal" id="session-modal">
+    <div class="session-box">
+      <h2>Вітаємо!</h2>
+
+      <!-- STEP 1: Input -->
+      <div id="step-auth">
+        <input type="text" id="session-input" placeholder="Введіть ім'я користувача" class="session-input"
+          autocomplete="off">
+        <div id="session-error" class="session-error"
+          style="display: none; color: #ff4444; margin-bottom: 15px; font-size: 13px;"></div>
+        <button class="btn btn-primary" id="btn-validate">Розпочати</button>
+      </div>
+
+      <!-- STEP 2: Choose / Start -->
+      <div id="step-choose" style="display: none;">
+        <div id="active-sessions-list" style="margin-bottom: 20px; display:flex; flex-direction:column; gap:8px;">
+          <!-- Buttons injected by JS -->
+        </div>
+        <hr style="border:0; border-top:1px solid var(--border); margin-bottom: 20px;">
+        <button class="btn btn-primary" id="btn-start-session">Створити нову сесію</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

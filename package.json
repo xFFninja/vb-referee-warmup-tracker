@@ -1,0 +1,12 @@
+{
+  "name": "volleyball-warmup-tracker",
+  "version": "1.0.0",
+  "description": "Volleyball warmup timer with server sync",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
