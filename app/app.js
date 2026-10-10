@@ -428,6 +428,10 @@ function renderList(fromIdx) {
     div.id = `si-${fromIdx + i}`;
     
     const idLabel = stage.id.includes('.') ? stage.id : String(stage.id).padStart(2,'0');
+    const canStartHere = stage.type === 'P' && stage.donutDur > 0 && !isCurr;
+    const startBtn = canStartHere
+      ? `<button class="si-start" data-stage-idx="${fromIdx + i}" title="Запустити таймер з цього етапу" aria-label="Запустити таймер з етапу ${idLabel}">&#9654;</button>`
+      : '';
     
     div.innerHTML = `
       <div class="si-indicator"></div>
@@ -437,7 +441,7 @@ function renderList(fromIdx) {
         <div class="si-name">${stage.description || 'Дії'}</div>
         <div class="si-meta">Старт: ${fmt(stage.startSec)}&nbsp;&nbsp;·&nbsp;&nbsp;Тривалість: ${stage.duration > 0 ? fmt(stage.duration) : '—'}</div>
       </div>
-      <div class="si-dur" id="si-dur-${fromIdx + i}">${stage.duration > 0 ? fmt(stage.duration) : '—'}</div>`;
+      <div class="si-dur" id="si-dur-${fromIdx + i}">${stage.duration > 0 ? fmt(stage.duration) : '—'}</div>${startBtn}`;
     list.appendChild(div);
     setTimeout(() => div.classList.remove('si-entering'), 350);
   });
@@ -526,6 +530,18 @@ async function pollServer() {
   } catch(e) {
     // network error, continue running locally
   }
+}
+
+// Start (or jump) the timer so that it begins exactly at the start of a parent stage
+function startFromStage(stageIdx) {
+  const stage = STAGES[stageIdx];
+  if (!stage || stage.type !== 'P' || !(stage.donutDur > 0)) return;
+
+  resetTimer(false); // clears finished state/overlay and stops any running loop
+  elapsedAtPause = TOTAL_SEC - stage.startSec;
+  startTs = null;
+  restoreUI();
+  startTimer(true); // sets startTs, saves & syncs state, starts the loop
 }
 
 function startTimer(isNewAction = true) {
@@ -811,6 +827,10 @@ function init() {
     isRunning ? pauseTimer(true) : startTimer(true);
   });
   E.btnReset.addEventListener('click', () => resetTimer(true));
+  E.stageList.addEventListener('click', e => {
+    const btn = e.target.closest('.si-start');
+    if (btn) startFromStage(Number(btn.dataset.stageIdx));
+  });
   E.btnDismiss.addEventListener('click', () => {
     E.matchOverlay.classList.remove('visible');
     E.matchOverlay.setAttribute('aria-hidden', 'true');
